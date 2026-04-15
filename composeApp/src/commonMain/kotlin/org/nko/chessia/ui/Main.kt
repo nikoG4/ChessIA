@@ -25,21 +25,23 @@ fun GameModeSelector(
         "🧑 Player vs 🤖 IA",
         "🤖 IA vs 🤖 IA",
         "🤖 IA vs 🧑🤖 Asistido",
-        "🧑🤖 Asistido vs 🧑🤖 Asistido"
+        "🧑🤖 Asistido vs 🧑🤖 Asistido",
+        "🌐 Multiplayer Online"
     )
 
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0xFF1C1C1E))
     ) {
-        // Gear icon for settings
+        // High-end gear icon with glow effect
         IconButton(
             onClick = onSettingsClick,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .statusBarsPadding() // Handled by statusBarsPadding for Android
-                .padding(16.dp)
+                .statusBarsPadding()
+                .padding(20.dp)
+                .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(50))
         ) {
-            Text("⚙️", fontSize = 28.sp)
+            Text("⚙️", fontSize = 32.sp, color = Color.Cyan)
         }
 
         Column(
@@ -226,7 +228,8 @@ fun GameSettingsScreen(
                         withTimer,
                         timerMinutes.toIntOrNull() ?: 5,
                         if (needsDifficulty) difficulty else null,
-                        selectedAI
+                        selectedAI,
+                        if (isMultiplayer) roomIdInput.trim() else null
                     )
                 },
                 modifier = Modifier.fillMaxWidth(0.7f).height(50.dp),
@@ -275,6 +278,28 @@ fun <T> DropdownMenuBox(
 
     Box {
         Button(
+            onClick = { expanded = true },
+            modifier = modifier,
+            colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF2C2C2E))
+        ) {
+            Text(labelProvider(selected ?: return@Button), color = Color.White)
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    onClick = {
+                        onSelected(option)
+                        expanded = false
+                    }
+                ) {
+                    Text(labelProvider(option))
+                }
+            }
+        }
+    }
+}
+     Button(
             onClick = { expanded = true },
             modifier = modifier,
             colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF2C2C2E))

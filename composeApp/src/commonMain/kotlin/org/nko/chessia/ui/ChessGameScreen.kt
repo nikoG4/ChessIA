@@ -16,7 +16,12 @@ import org.nko.chessia.com.github.krossovochkin.chess.Piece
 import org.nko.chessia.com.github.krossovochkin.chess.Square
 import kotlin.random.Random
 import androidx.compose.material.AlertDialog
+import androidx.compose.material.CircularProgressApi
+import androidx.compose.material.CircularProgressIndicator
+import org.nko.chessia.com.github.krossovochkin.chess.Move.Companion.asMove
 import org.nko.chessia.models.AIProvider
+import org.nko.chessia.services.MultiplayerService
+import org.nko.chessia.services.MultiplayerState
 
 data class HighlightedSquare(
     val square: Square,
@@ -31,11 +36,40 @@ fun ChessBoardScreen(
     timerMinutes: Int?,
     difficulty: String?,
     onBack: () -> Unit,
-    selectedAI: AIProvider?
+    selectedAI: AIProvider?,
+    roomId: String? = null
 ) {
+    val isMultiplayer = mode == "🌐 Multiplayer Online"
+    val multiplayerService = remember { if (isMultiplayer) MultiplayerService() else null }
+    val mpState by multiplayerService?.state?.collectAsState(MultiplayerState.DISCONNECTED) ?: remember { mutableStateOf(MultiplayerState.DISCONNECTED) }
+    val mpRoomId by multiplayerService?.roomId?.collectAsState() ?: remember { mutableStateOf<String?>(null) }
+    val mpPlayerColor by multiplayerService?.playerColor?.collectAsState() ?: remember { mutableStateOf<Piece.Color?>(null) }
+    val opponentMoves by multiplayerService?.opponentMoves?.collectAsState() ?: remember { mutableStateOf<String?>(null) }
+    val mpError by multiplayerService?.errorMessage?.collectAsState() ?: remember { mutableStateOf<String?>(null) }
+
     var currentFen by remember { mutableStateOf("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") }
 
-    val playerColor = remember { if (Random.nextBoolean()) Piece.Color.White else Piece.Color.Black }
+    val playerColor = if (isMultiplayer) {
+        mpPlayerColor ?: Piece.Color.White // default before sync
+    } else {
+        remember { if (Random.nextBoolean()) Piece.Color.White else Piece.Color.Black }
+    }
+
+    LaunchedEffect(isMultiplayer) {
+        if (isMultiplayer) {
+            if (roomId.isNullOrBlank()) {
+                multiplayerService?.connectAndCreateRoom()
+            } else {
+                multiplayerService?.connectAndJoinRoom(roomId)
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            multiplayerService?.disconnect()
+        }
+    }
 
     var capturedWhitePieces by remember { mutableStateOf<List<Piece>>(emptyList()) }
     var capturedBlackPieces by remember { mutableStateOf<List<Piece>>(emptyList()) }
@@ -138,14 +172,45 @@ fun ChessBoardScreen(
         modifier = Modifier.fillMaxSize().background(Color(0xFF1C1C1E)),
         contentAlignment = Alignment.Center
     ) {
+        if (isMultiplayer && (mpState == MultiplayerState.CONNECTING || mpState == MultiplayerState.ROOM_CREATED || mpState == MultiplayerState.ROOM_JOINED)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                CircularProgressIndicator(color = Color.White)
+                Text(
+                    text = when (mpState) {
+                        MultiplayerState.CONNECTING -> "Conectando al servidor..."
+                        MultiplayerState.ROOM_CREATED -> "Sala Creada: $mpRoomId\nEsperando oponente..."
+                        MultiplayerState.ROOM_JOINED -> "Conectado. Esperando inicio..."
+                        else -> "Esperando..."
+                    },
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                TextButton(onClick = onBack) { Text("Cancelar", color = Color.LightGray) }
+            }
+            return@Box
+        }
+
+        if (isMultiplayer && mpState == MultiplayerState.ERROR) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Error de Conexión", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(mpError ?: "Error desconocido", color = Color.White, textAlign = TextAlign.Center)
+                TextButton(onClick = onBack) { Text("Volver al menú", color = Color.LightGray) }
+            }
+            return@Box
+        }
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.padding(16.dp)
         ) {
-            Text("Modo: $mode", color = Color.LightGray)
-            difficulty?.let {
-                Text("🎯 Dificultad: $it", color = Color.LightGray)
+            if (isMultiplayer) {
+                Text("Modo: $mode | Sala: ${mpRoomId ?: roomId}", color = Color.LightGray)
+            } else {
+                Text("Modo: $mode", color = Color.LightGray)
+                difficulty?.let {
+                    Text("🎯 Dificultad: $it", color = Color.LightGray)
+                }
             }
 
             if (withTimer) {
@@ -176,8 +241,26 @@ fun ChessBoardScreen(
                     onCaptureWhite = { piece -> capturedWhitePieces += piece },
                     onCaptureBlack = { piece -> capturedBlackPieces += piece },
                     selectedAI = selectedAI,
-                    difficulty = difficulty
+                    difficulty = difficulty,
+                    onMove = { moveStr ->
+                        if (isMultiplayer) {
+                            multiplayerService?.sendMove(moveStr)
+                        }
+                    }
                 )
+
+                LaunchedEffect(opponentMoves) {
+                    opponentMoves?.let { moveStr ->
+                        val move = moveStr.asMove()
+                        if (move != null) {
+                            val game = Game.create(currentFen)!!
+                            if (game.move(move)) {
+                                currentFen = org.nko.chessia.com.github.krossovochkin.chess.fen.FenSerializer.serialize(game.state)
+                                checkGameState(game)
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 

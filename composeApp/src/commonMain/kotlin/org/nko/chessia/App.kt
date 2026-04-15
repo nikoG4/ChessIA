@@ -24,6 +24,7 @@ fun App() {
         var withTimer by remember { mutableStateOf(false) }
         var timerMinutes by remember { mutableStateOf(5) }
         var difficulty by remember { mutableStateOf<String?>(null) }
+        var roomId by remember { mutableStateOf<String?>(null) }
 
         when (currentScreen) {
             "selector" -> GameModeSelector(
@@ -40,11 +41,12 @@ fun App() {
             "settings" -> GameSettingsScreen(
                 selectedMode = selectedMode,
                 onBack = { currentScreen = "selector" },
-                onStartGame = { withTime, time, diff, sAI ->
+                onStartGame = { withTime, time, diff, sAI, room ->
                     selectedAI = sAI
                     withTimer = withTime
                     timerMinutes = time
                     difficulty = if (selectedMode.contains("🧑 Player vs 🧑 Player")) null else diff
+                    roomId = room
                     currentScreen = "board"
                 }
             )
@@ -55,6 +57,7 @@ fun App() {
                 timerMinutes = timerMinutes,
                 difficulty = difficulty,
                 selectedAI = selectedAI,
+                roomId = roomId,
                 onBack = {
                     currentScreen = "selector"
                 }

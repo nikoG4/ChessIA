@@ -75,6 +75,7 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kotlinx.serialization.json.v181)
+            implementation(libs.ktor.client.websockets)
 
         }
         desktopMain.dependencies {

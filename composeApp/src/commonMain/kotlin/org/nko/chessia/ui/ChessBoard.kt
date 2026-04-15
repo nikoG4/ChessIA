@@ -42,7 +42,8 @@ fun ChessBoard(
     onCaptureWhite: (Piece) -> Unit,
     onCaptureBlack: (Piece) -> Unit,
     selectedAI: AIProvider?,
-    difficulty: String?
+    difficulty: String?,
+    onMove: ((String) -> Unit)? = null
 ) {
     val game = remember(fen) { Game.create(fen)!! }
     var selectedSquare by remember { mutableStateOf<Square?>(null) }

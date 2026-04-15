@@ -41,6 +41,11 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktorClien
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientCore" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorClientCore" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktorClientCore" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktorClientCore" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktorClientCore" }
+ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktorClientCore" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.4.14" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
