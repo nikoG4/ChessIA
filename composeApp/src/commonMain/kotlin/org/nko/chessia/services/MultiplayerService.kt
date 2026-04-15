@@ -46,11 +46,12 @@ class MultiplayerService {
 
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
 
-    fun connectAndCreateRoom(host: String = "localhost", port: Int = 8081) {
+    fun connectAndCreateRoom(host: String = "chessia-server-754837345818.us-central1.run.app", port: Int = 443) {
         _state.value = MultiplayerState.CONNECTING
         coroutineScope.launch {
             try {
-                client.webSocket(method = HttpMethod.Get, host = host, port = port, path = "/ws/game") {
+                val protocol = if (port == 443) io.ktor.http.URLProtocol.WSS else io.ktor.http.URLProtocol.WS
+                client.webSocket(method = HttpMethod.Get, host = host, port = port, path = "/ws/game", request = { url { this.protocol = protocol } }) {
                     session = this
                     send(Frame.Text("CREATE"))
                     listenMessages()
@@ -62,11 +63,12 @@ class MultiplayerService {
         }
     }
 
-    fun connectAndJoinRoom(roomId: String, host: String = "localhost", port: Int = 8081) {
+    fun connectAndJoinRoom(roomId: String, host: String = "chessia-server-754837345818.us-central1.run.app", port: Int = 443) {
         _state.value = MultiplayerState.CONNECTING
         coroutineScope.launch {
             try {
-                client.webSocket(method = HttpMethod.Get, host = host, port = port, path = "/ws/game") {
+                val protocol = if (port == 443) io.ktor.http.URLProtocol.WSS else io.ktor.http.URLProtocol.WS
+                client.webSocket(method = HttpMethod.Get, host = host, port = port, path = "/ws/game", request = { url { this.protocol = protocol } }) {
                     session = this
                     send(Frame.Text("JOIN $roomId"))
                     listenMessages()

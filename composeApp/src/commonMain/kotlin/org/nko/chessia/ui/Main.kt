@@ -1,4 +1,5 @@
 package org.nko.chessia.ui
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -32,7 +33,6 @@ fun GameModeSelector(
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0xFF1C1C1E))
     ) {
-        // High-end gear icon with glow effect
         IconButton(
             onClick = onSettingsClick,
             modifier = Modifier
@@ -49,13 +49,9 @@ fun GameModeSelector(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
             Text("ChessIA", fontSize = 48.sp, color = Color.White, fontWeight = FontWeight.Bold)
-
             Spacer(modifier = Modifier.height(16.dp))
-
             Text("Elige modo de juego", fontSize = 28.sp, color = Color.White, fontWeight = FontWeight.Bold)
-
             Spacer(modifier = Modifier.height(32.dp))
 
             gameModes.forEach { mode ->
@@ -76,13 +72,15 @@ fun GameModeSelector(
 fun GameSettingsScreen(
     selectedMode: String,
     onBack: () -> Unit,
-    onStartGame: (Boolean, Int, String?, AIProvider?) -> Unit
+    onStartGame: (Boolean, Int, String?, AIProvider?, String?) -> Unit
 ) {
     var withTimer by remember { mutableStateOf(false) }
     var timerMinutes by remember { mutableStateOf("5") }
     var difficulty by remember { mutableStateOf("Media") }
+    var roomIdInput by remember { mutableStateOf("") }
 
-    val needsDifficulty = !selectedMode.contains("🧑 Player vs 🧑 Player") && !selectedMode.contains("Configuración")
+    val isMultiplayer = selectedMode.contains("Multiplayer")
+    val needsDifficulty = !selectedMode.contains("🧑 Player vs 🧑 Player") && !selectedMode.contains("Configuración") && !isMultiplayer
     val needsAIConfig = selectedMode.contains("🤖 IA") || selectedMode.contains("Configuración")
     val needsTimer = selectedMode.contains("🧑 Player vs 🧑 Player")
 
@@ -114,6 +112,17 @@ fun GameSettingsScreen(
             Text(selectedMode, color = Color.LightGray, fontSize = 16.sp)
 
             Divider(color = Color.Gray.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 8.dp))
+
+            if (isMultiplayer) {
+                OutlinedTextField(
+                    value = roomIdInput,
+                    onValueChange = { roomIdInput = it },
+                    label = { Text("ID de la Sala (Opcional)", color = Color.LightGray) },
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(textColor = Color.White, focusedBorderColor = Color.White, unfocusedBorderColor = Color.Gray),
+                    singleLine = true
+                )
+            }
 
             if (needsTimer) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -178,7 +187,6 @@ fun GameSettingsScreen(
                             }
                             ConfigField("Headers (JSON)", headersJson, singleLine = false) { newValue ->
                                 try {
-                                    // Basic manual parsing of simple JSON map to avoid adding full heavy parser here
                                     val newMap = newValue.trim().removeSurrounding("{", "}")
                                         .split(",")
                                         .filter { it.contains(":") }
@@ -187,11 +195,8 @@ fun GameSettingsScreen(
                                             parts[0].trim().removeSurrounding("\"") to parts[1].trim().removeSurrounding("\"")
                                         }
                                     selectedAI = selectedAI?.copy(headers = newMap)
-                                } catch (e: Exception) {
-                                    // Ignore malformed input during typing
-                                }
+                                } catch (e: Exception) { }
                             }
-
                             ConfigField("Body Template", ai.bodyTemplate, singleLine = false) { selectedAI = selectedAI?.copy(bodyTemplate = it) }
                             
                             Text("Extracción de Respuesta:", color = Color.White, fontSize = 14.sp)
@@ -229,7 +234,7 @@ fun GameSettingsScreen(
                         timerMinutes.toIntOrNull() ?: 5,
                         if (needsDifficulty) difficulty else null,
                         selectedAI,
-                        if (isMultiplayer) roomIdInput.trim() else null
+                        if (isMultiplayer) roomIdInput.trim().ifEmpty { null } else null
                     )
                 },
                 modifier = Modifier.fillMaxWidth(0.7f).height(50.dp),
@@ -275,7 +280,6 @@ fun <T> DropdownMenuBox(
     modifier: Modifier = Modifier.width(200.dp)
 ) {
     var expanded by remember { mutableStateOf(false) }
-
     Box {
         Button(
             onClick = { expanded = true },
@@ -284,37 +288,9 @@ fun <T> DropdownMenuBox(
         ) {
             Text(labelProvider(selected ?: return@Button), color = Color.White)
         }
-
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
-                DropdownMenuItem(
-                    onClick = {
-                        onSelected(option)
-                        expanded = false
-                    }
-                ) {
-                    Text(labelProvider(option))
-                }
-            }
-        }
-    }
-}
-     Button(
-            onClick = { expanded = true },
-            modifier = modifier,
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF2C2C2E))
-        ) {
-            Text(labelProvider(selected ?: return@Button), color = Color.White)
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    onClick = {
-                        onSelected(option)
-                        expanded = false
-                    }
-                ) {
+                DropdownMenuItem(onClick = { onSelected(option); expanded = false }) {
                     Text(labelProvider(option))
                 }
             }

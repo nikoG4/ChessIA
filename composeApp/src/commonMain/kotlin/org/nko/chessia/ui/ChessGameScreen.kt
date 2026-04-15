@@ -9,6 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.delay
 import org.nko.chessia.com.github.krossovochkin.chess.Game
@@ -16,7 +18,6 @@ import org.nko.chessia.com.github.krossovochkin.chess.Piece
 import org.nko.chessia.com.github.krossovochkin.chess.Square
 import kotlin.random.Random
 import androidx.compose.material.AlertDialog
-import androidx.compose.material.CircularProgressApi
 import androidx.compose.material.CircularProgressIndicator
 import org.nko.chessia.com.github.krossovochkin.chess.Move.Companion.asMove
 import org.nko.chessia.models.AIProvider
@@ -286,9 +287,3 @@ fun ChessBoardScreen(
         }
     }
 }
-
-
-
-
-
-
